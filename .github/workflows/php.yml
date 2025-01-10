@@ -11,14 +11,22 @@ permissions:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
 
+    - name: Check if composer.json exists
+      id: check_composer_json
+      run: |
+        if [ ! -f composer.json ]; then
+          echo "composer.json not found, skipping Composer validation and install";
+          exit 0;
+        fi
+
     - name: Validate composer.json and composer.lock
       run: composer validate --strict
+      if: steps.check_composer_json.outputs.exists == 'true'
 
     - name: Cache Composer packages
       id: composer-cache
@@ -28,12 +36,12 @@ jobs:
         key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
         restore-keys: |
           ${{ runner.os }}-php-
+      if: steps.check_composer_json.outputs.exists == 'true'
 
     - name: Install dependencies
       run: composer install --prefer-dist --no-progress
+      if: steps.check_composer_json.outputs.exists == 'true'
 
-    # Add a test script to composer.json, for instance: "test": "vendor/bin/phpunit"
-    # Docs: https://getcomposer.org/doc/articles/scripts.md
-
+    # Uncomment the lines below to run tests if you add a test script in composer.json
     # - name: Run test suite
     #   run: composer run-script test
